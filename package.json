@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "HLS proxy for hianime API",
   "type": "module",
-  "dependencies": {
-    "axios": "^1.6.2"
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
   }
 }

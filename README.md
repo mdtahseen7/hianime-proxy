@@ -1,74 +1,62 @@
-# HiAnime API - Vercel Proxy
+# HiAnime Proxy - Cloudflare Worker
 
-This is a standalone HLS proxy deployed on Vercel to add CORS headers.
+A high-performance HLS proxy built with Cloudflare Workers. This proxy handles CORS, manifest rewriting, and bypasses port restrictions using raw TCP/TLS sockets.
 
-## Why Separate Deployment?
+## Why Cloudflare Workers?
 
-1. **Main API** (Cloudflare Workers) - Gets blocked by CDN (403)
-2. **Proxy** (Vercel) - Can access CDN successfully
-3. **CDN** - Doesn't send CORS headers, needs proxy to add them
+1. **Unlimited Bandwidth**: Unlike Vercel's free plan (10GB), Cloudflare offers effectively unlimited bandwidth for edge functions.
+2. **Low Latency**: Runs on Cloudflare's global edge network, minimizing TTFB (Time to First Byte).
+3. **Streaming Architecture**: Uses `ReadableStream` and `TransformStream` to pipe video data directly from the socket to the client, ensuring high speed and low memory usage.
+
+## Advanced Features
+
+* **Socket-Based Proxying**: Cloudflare's `fetch()` API blocks non-standard ports like **2228**. This project implements a custom HTTP/1.1 client over raw TCP/TLS sockets (`cloudflare:sockets`) to bypass this restriction.
+* **On-the-fly De-chunking**: Handles source CDNs that use `Transfer-Encoding: chunked` by reconstructing the stream in real-time.
+* **Stealth Headers**: Spoof a modern Chrome browser environment to prevent CDN blocks.
+* **M3U8 Tag Rewriting**: Automatically updates playlists, variant manifests, and decryption keys to route through the proxy.
 
 ## Deployment
 
-### Option 1: Vercel CLI
+### Prerequisites
 
-```bash
-cd vercel-proxy
-npm install
-vercel --prod
-```
+* Node.js installed.
+* A Cloudflare account.
+* A Cloudflare API Token with `Edit Cloudflare Workers` permissions.
 
-### Option 2: Vercel Dashboard
+### Steps
 
-1. Go to https://vercel.com/new
-2. Import this `vercel-proxy` folder
-3. Project name: `animo-proxy`
-4. Deploy
+1. Install dependencies:
 
-### Option 3: GitHub Integration
+    ```bash
+    npm install
+    ```
 
-1. Push to GitHub
-2. Connect to Vercel
-3. Auto-deploys on push
+2. Deploy to Cloudflare:
 
-## Configuration
-
-The proxy will be available at:
-- `https://animo-proxy.vercel.app/api/proxy`
+    ```bash
+    $env:CLOUDFLARE_API_TOKEN='your_token_here'; npm run deploy
+    ```
 
 ## Usage
 
+```http
+GET https://your-worker.workers.dev/?url=ENCODED_URL&referer=ENCODED_REFERER
 ```
-GET https://animo-proxy.vercel.app/api/proxy?url=ENCODED_URL&referer=ENCODED_REFERER
-```
 
-**Parameters:**
-- `url` - The CDN URL to proxy (URL encoded)
-- `referer` - The referer header (URL encoded, optional)
+### Parameters
 
-**Features:**
-- Adds CORS headers
-- Forwards Range requests
-- Rewrites M3U8 playlists
-- Caches segments appropriately
+* `url`: The video/m3u8 URL to proxy (fully URL-encoded).
+* `referer`: The referer header to spoof (optional, defaults to `https://megacloud.tv`).
 
-## Testing
+## Development
+
+To run locally in development mode:
 
 ```bash
-# Test health
-curl https://animo-proxy.vercel.app/api/proxy?url=https%3A%2F%2Fexample.com
-
-# Test with actual stream
-curl "https://animo-proxy.vercel.app/api/proxy?url=ENCODED_M3U8_URL&referer=https%3A%2F%2Fmegacloud.tv"
+npm run dev
 ```
 
-## Environment Variables
+## Author
 
-None required - works out of the box!
-
-## Notes
-
-- Proxy rewrites M3U8 segment URLs to also use this proxy
-- Handles both playlists and segments
-- Supports Range requests for seeking
-- Max request timeout: 30 seconds
+**RY4N**
+* GitHub: [@ryanwtf88](https://github.com/ryanwtf88)

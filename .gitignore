@@ -2,3 +2,10 @@ node_modules/
 .vercel
 .env
 .env.local
+.wrangler/
+dist/
+token.txt
+package-lock.json
+error.txt
+worker-test.js
+*.tmp
