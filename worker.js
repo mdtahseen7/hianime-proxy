@@ -168,16 +168,29 @@ export default {
         }
 
         try {
-            const targetReferer = referer || 'https://megacloud.tv';
+            const targetReferer = referer || 'https://megacloud.tv/';
+            const targetOrigin = new URL(targetReferer).origin;
+
             const headersMap = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Referer': targetReferer,
-                'Origin': new URL(targetReferer).origin,
+                'Origin': targetOrigin,
                 'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site',
+                'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Windows"',
             };
 
             const rangeHeader = request.headers.get('Range');
             if (rangeHeader) headersMap['Range'] = rangeHeader;
+
+            // Forward other relevant headers if present
+            const xRequestedWith = request.headers.get('X-Requested-With');
+            if (xRequestedWith) headersMap['X-Requested-With'] = xRequestedWith;
 
             let response;
             const isNonStandardPort = url.includes(':2228');
@@ -206,9 +219,13 @@ export default {
 
             const responseHeaders = new Headers(response.headers);
             responseHeaders.set('Access-Control-Allow-Origin', '*');
+            responseHeaders.set('X-Proxy-Version', '1.1.0-fixed-headers');
 
             if (!response.ok && response.status !== 206) {
-                return new Response("Upstream error " + response.status, { status: response.status, headers: responseHeaders });
+                return new Response("Upstream error " + response.status, {
+                    status: response.status,
+                    headers: responseHeaders
+                });
             }
 
             responseHeaders.delete('Content-Security-Policy');
